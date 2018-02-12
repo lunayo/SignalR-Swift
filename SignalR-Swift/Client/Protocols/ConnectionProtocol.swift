@@ -26,6 +26,7 @@ public protocol ConnectionProtocol: class {
     var headers: HTTPHeaders { get set }
     var sessionManager: SessionManager { get }
     var webSocketAllowsSelfSignedSSL: Bool { get set }
+    var maxOperationCount: Int { get set }
 
     func onSending() -> String?
 

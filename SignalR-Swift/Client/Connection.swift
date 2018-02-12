@@ -25,6 +25,7 @@ public class Connection: ConnectionProtocol {
     var disconnectTimeout: Double?
     var disconnectTimeoutOperation: BlockOperation!
 
+    public var maxOperationCount = 0
     public var state = ConnectionState.disconnected
     public var url: String
 

@@ -39,10 +39,15 @@ public class WebSocketTransport: HttpTransport, WebSocketDelegate {
     }
 
     override public func send(connection: ConnectionProtocol, data: Any, connectionData: String?, completionHandler: ((Any?, Error?) -> ())?) {
-        if let dataString = data as? String {
-            self.webSocket?.write(string: dataString)
-        } else if let dataDict = data as? [String: Any] {
-            self.webSocket?.write(string: dataDict.toJSONString()!)
+        if let webSocket = self.webSocket {
+            // drop frame if it has exceed the maximum operation count
+            if connection.maxOperationCount > 0 && webSocket.writeQueueOperationCount < connection.maxOperationCount {
+                if let dataString = data as? String {
+                    webSocket.write(string: dataString)
+                } else if let dataDict = data as? [String: Any] {
+                    webSocket.write(string: dataDict.toJSONString()!)
+                }
+            }
         }
         
         completionHandler?(nil, nil)
