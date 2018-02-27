@@ -39,13 +39,24 @@ public class WebSocketTransport: HttpTransport, WebSocketDelegate {
     }
 
     override public func send(connection: ConnectionProtocol, data: Any, connectionData: String?, completionHandler: ((Any?, Error?) -> ())?) {
+        
+        func writeToWebSocket(webSocket: WebSocket, data: Any) {
+            if let dataString = data as? String {
+                webSocket.write(string: dataString)
+            } else if let dataDict = data as? [String: Any] {
+                webSocket.write(string: dataDict.toJSONString()!)
+            }
+        }
+        
         if let webSocket = self.webSocket {
-            // drop frame if it has exceed the maximum operation count
-            if connection.maxOperationCount > 0 && webSocket.writeQueueOperationCount < connection.maxOperationCount {
-                if let dataString = data as? String {
-                    webSocket.write(string: dataString)
-                } else if let dataDict = data as? [String: Any] {
-                    webSocket.write(string: dataDict.toJSONString()!)
+            if connection.maxOperationCount <= 0 {
+                writeToWebSocket(webSocket: webSocket, data: data)
+            } else {
+                // drop frame if it has exceed the maximum operation count
+                if connection.maxOperationCount > 0 && webSocket.writeQueue.operations.count >= connection.maxOperationCount {
+                    // try dropping last operation from the queue
+                    webSocket.writeQueue.operations.first?.cancel()
+                    writeToWebSocket(webSocket: webSocket, data: data)
                 }
             }
         }
