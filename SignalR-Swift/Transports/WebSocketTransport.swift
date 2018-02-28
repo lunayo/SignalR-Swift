@@ -53,9 +53,11 @@ public class WebSocketTransport: HttpTransport, WebSocketDelegate {
                 writeToWebSocket(webSocket: webSocket, data: data)
             } else {
                 // drop frame if it has exceed the maximum operation count
-                if connection.maxOperationCount > 0 && webSocket.writeQueue.operations.count >= connection.maxOperationCount {
+                if webSocket.writeQueue.operations.count >= connection.maxOperationCount {
                     // try dropping last operation from the queue
                     webSocket.writeQueue.operations.first?.cancel()
+                    writeToWebSocket(webSocket: webSocket, data: data)
+                } else {
                     writeToWebSocket(webSocket: webSocket, data: data)
                 }
             }
