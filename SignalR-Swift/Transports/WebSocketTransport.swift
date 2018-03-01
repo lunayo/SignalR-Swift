@@ -52,19 +52,19 @@ public class WebSocketTransport: HttpTransport, WebSocketDelegate {
             if connection.maxOperationCount <= 0 {
                 writeToWebSocket(webSocket: webSocket, data: data)
             } else {
+                webSocket.writeQueue.isSuspended = true;
+                // get the number of cancelled or currently executing item
+                let cancelledOperationCount: Int = webSocket.writeQueue.operations.filter({$0.isCancelled || $0.isExecuting}).count
                 // drop frame if it has exceed the maximum operation count.
-                if webSocket.writeQueue.operationCount >= connection.maxOperationCount {
-                    webSocket.writeQueue.isSuspended = true;
+                if webSocket.writeQueue.operationCount - cancelledOperationCount >= connection.maxOperationCount {
                     // get the current operation that has not been cancelled.
-                    var index = 1
-                    while(index < webSocket.writeQueue.operationCount - 2 && (webSocket.writeQueue.operations[index].isCancelled || webSocket.writeQueue.operations[index].isExecuting)) {
-                        index += 1
-                    }
+                    let index = cancelledOperationCount
                     // try dropping last operation from the queue.
                     webSocket.writeQueue.operations[index].cancel()
                     webSocket.writeQueue.isSuspended = false;
                     writeToWebSocket(webSocket: webSocket, data: data)
                 } else {
+                    webSocket.writeQueue.isSuspended = false;
                     writeToWebSocket(webSocket: webSocket, data: data)
                 }
             }
