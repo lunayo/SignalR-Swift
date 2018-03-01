@@ -52,10 +52,17 @@ public class WebSocketTransport: HttpTransport, WebSocketDelegate {
             if connection.maxOperationCount <= 0 {
                 writeToWebSocket(webSocket: webSocket, data: data)
             } else {
-                // drop frame if it has exceed the maximum operation count
-                if webSocket.writeQueue.operations.count >= connection.maxOperationCount {
-                    // try dropping last operation from the queue
-                    webSocket.writeQueue.operations.first?.cancel()
+                // drop frame if it has exceed the maximum operation count.
+                if webSocket.writeQueue.operationCount >= connection.maxOperationCount {
+                    webSocket.writeQueue.isSuspended = true;
+                    // get the current operation that has not been cancelled.
+                    var index = 1
+                    while(index < webSocket.writeQueue.operationCount - 2 && (webSocket.writeQueue.operations[index].isCancelled || webSocket.writeQueue.operations[index].isExecuting)) {
+                        index += 1
+                    }
+                    // try dropping last operation from the queue.
+                    webSocket.writeQueue.operations[index].cancel()
+                    webSocket.writeQueue.isSuspended = false;
                     writeToWebSocket(webSocket: webSocket, data: data)
                 } else {
                     writeToWebSocket(webSocket: webSocket, data: data)
